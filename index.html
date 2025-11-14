@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Vocabulary Flashcard Selector</title>
+    <title>11+ Vocab Flashcards</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -16,8 +16,6 @@
                     colors: {
                         'primary': '#4f46e5',
                         'secondary': '#f97316',
-                        'card-front': '#ffffff',
-                        'card-back': '#eff6ff',
                     }
                 }
             }
@@ -26,10 +24,15 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Flashcard 3D flip styling */
         .flashcard {
             width: 100%;
-            height: 350px;
-            perspective: 1000px;
+            height: 380px; 
+            perspective: 1500px;
             cursor: pointer;
         }
 
@@ -40,6 +43,9 @@
             text-align: center;
             transition: transform 0.8s;
             transform-style: preserve-3d;
+            /* Added a stronger shadow to the inner card for a 3D lift */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-radius: 1.5rem; 
         }
 
         .flashcard.flipped .card-inner {
@@ -55,650 +61,277 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 2.5rem; 
+            border-radius: 1.5rem; /* Ensure radius is on the faces */
             transition: background-color 0.3s;
+            overflow-y: auto; 
         }
 
+        /* * FIXED: Replaced unreliable theme() calls with CSS linear-gradients 
+         * for colorful, 3D-style cards.
+        */
         .card-front {
-            background-color: var(--color-card-front);
-            border: 2px solid #e5e7eb;
+            /* Warm yellow-to-orange gradient */
+            background: linear-gradient(135deg, #fde047, #f97316);
+            border: 1px solid #f97316;
         }
 
         .card-back {
-            background-color: var(--color-card-back);
+            /* Cool light-blue-to-indigo gradient */
+            background: linear-gradient(135deg, #7dd3fc, #4f46e5);
             transform: rotateY(180deg);
-            border: 2px solid var(--color-primary);
+            border: 1px solid #4f46e5;
             text-align: left;
-            justify-content: flex-start;
-            padding-top: 2rem;
+            justify-content: flex-start; /* Align content to top */
+            align-items: flex-start;
         }
-
-        /* Styling for the Select Dropdown */
-        #set-selector {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23f97316'%3e%3cpath d='M7 7l3 5 3-5' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            background-size: 1.5em 1.5em;
-            padding-right: 2.5rem;
+        
+        /* Custom scrollbar for the card back (WebKit browsers) */
+        .card-back::-webkit-scrollbar {
+            width: 8px;
+        }
+        .card-back::-webkit-scrollbar-thumb {
+            background-color: #4f46e5; /* Scrollbar color */
+            border-radius: 10px;
+        }
+        .card-back::-webkit-scrollbar-track {
+            background-color: #a5b4fc; /* Track color */
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4">
+<body class="bg-sky-50 min-h-screen flex flex-col items-center p-4 sm:p-8">
 
-    <div class="max-w-4xl w-full">
-        <h1 class="text-4xl font-extrabold text-gray-900 mb-2 text-center">
-            Vocabulary Flashcard Selector
-        </h1>
-        <p class="text-lg text-gray-500 mb-6 text-center">
-            Select a set below to start studying that group of words.
-        </p>
-    </div>
+    <div class="max-w-3xl w-full">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                11+ Vocab Flashcards
+            </h1>
+            <p class="text-lg sm:text-xl text-gray-600">
+                Choose a set and start practicing. Click the card to flip it!
+            </p>
+        </header>
 
-    <div id="app-container" class="max-w-2xl w-full">
-        <!-- New File Selector Dropdown -->
-        <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
-            <label for="set-selector" class="block text-lg font-medium text-gray-700 mb-2">
-                Choose Vocabulary Set:
-            </label>
-            <select id="set-selector" onchange="filterDeck()" 
-                    class="block w-full py-3 px-4 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-900 text-lg">
-                <!-- Options populated by JS -->
-            </select>
-        </div>
-
-        <div id="status-message" class="text-center p-4 rounded-xl text-lg hidden"></div>
-
-        <div id="flashcard-deck" class="">
-            <div class="text-center mb-4">
-                <p class="text-sm font-medium text-gray-600">Card <span id="card-index">0</span> of <span id="card-count">0</span></p>
+        <!-- App Container -->
+        <main id="app-container" class="w-full">
+            <!-- Set Selector Card -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg mb-6">
+                <label for="set-selector" class="block text-lg font-semibold text-gray-800 mb-3">
+                    Choose Vocabulary Set:
+                </label>
+                <select id="set-selector" 
+                        class="block w-full py-3 px-4 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-gray-900 text-lg transition duration-200">
+                    <option>Loading sets...</option>
+                </select>
             </div>
-            <div id="card-display" class="flashcard mb-6" onclick="flipCard()">
-                <div id="card-inner" class="card-inner">
-                    <!-- Card Front -->
-                    <div class="card-face card-front">
-                        <span class="text-sm text-primary font-bold mb-2 uppercase tracking-widest">Front (The Word)</span>
-                        <h3 id="card-front-content" class="text-4xl font-extrabold text-gray-900"></h3>
-                    </div>
-                    <!-- Card Back -->
-                    <div class="card-face card-back">
-                        <span class="text-sm text-primary font-bold mb-2 uppercase tracking-widest">Back (Definition & Context)</span>
-                        <p id="card-back-content" class="text-lg text-gray-800 leading-relaxed"></p>
+
+            <!-- Status Message Area -->
+            <div id="status-message" class="text-center p-4 rounded-xl text-lg hidden mb-6"></div>
+
+            <!-- Flashcard Deck Area -->
+            <div id="flashcard-deck" class="hidden">
+                <!-- Card Count -->
+                <div class="text-center mb-4">
+                    <p class="text-base font-medium text-gray-600">
+                        Card <span id="card-index" class="font-bold text-gray-900">0</span> of <span id="card-count" class="font-bold text-gray-900">0</span>
+                    </p>
+                </div>
+
+                <!-- The Flashcard -->
+                <div id="card-display" class="flashcard mb-6">
+                    <div id="card-inner" class="card-inner">
+                        <!-- Card Front -->
+                        <div class="card-face card-front">
+                            <span class="text-sm text-yellow-900 font-bold mb-4 uppercase tracking-widest">Word</span>
+                            <h3 id="card-front-content" class="text-4xl sm:text-5xl font-extrabold text-gray-900"></h3>
+                        </div>
+                        <!-- Card Back -->
+                        <div class="card-face card-back">
+                            <!-- Text color changed to white for contrast on gradient -->
+                            <span class="text-sm text-indigo-100 font-bold mb-4 uppercase tracking-widest">Definition & Context</span>
+                            <div id="card-back-content" class="text-lg text-white leading-relaxed space-y-4">
+                                <!-- Content populated by JS -->
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="flex justify-center space-x-4">
-                <button onclick="navigateCard(-1)" class="p-3 bg-secondary hover:bg-orange-600 text-white rounded-full transition shadow-md disabled:opacity-50" id="prev-button" disabled>
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                <button onclick="navigateCard(1)" class="p-3 bg-secondary hover:bg-orange-600 text-white rounded-full transition shadow-md disabled:opacity-50" id="next-button" disabled>
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
+                <!-- Navigation Buttons -->
+                <nav class="flex justify-center space-x-4">
+                    <button id="prev-button" class="p-4 bg-secondary hover:bg-orange-600 text-white rounded-full transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95" disabled>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <button id="next-button" class="p-4 bg-secondary hover:bg-orange-600 text-white rounded-full transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95" disabled>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </nav>
             </div>
-        </div>
+        </main>
     </div>
 
+    <!-- 
+      1. Load the vocabulary data first.
+    -->
+    <script src="set.js"></script>
+
+    <!-- 
+      2. Load the application logic script.
+    -->
     <script>
-        let fullDeck = [];
-        let flashcardDeck = [];
-        let currentCardIndex = 0;
+        window.addEventListener('DOMContentLoaded', () => {
 
-        // --- HARDCODED VOCABULARY DECK (All 327 unique words from your 28 PDFs) ---
-        const VOCAB_BY_SET = {
-            "All Sets": [], // Will be populated dynamically
+            let fullDeck = [];
+            let currentDeck = [];
+            let currentCardIndex = 0;
+            let setNames = [];
 
-            // --- INITIAL 10 SETS (as provided previously) ---
-            "11 Plus Vocabulary 3.pdf": [
-                { front: "Ambrosial", back: "<strong>Tasting or smelling very delicious.</strong>\n\nExample: The bakery was filled with the ambrosial scent of freshly baked bread.\nSynonyms: delicious, tasty" },
-                { front: "Ample", back: "<strong>More than enough; plenty.</strong>\n\nExample: There was ample space in the playground for all the children to run around.\nSynonyms: plentiful, large" },
-                { front: "Antiquated", back: "<strong>Very old and not used much anymore.</strong>\n\nExample: The school had an antiquated computer that didn't even have the internet!\nSynonyms: old-fashioned, outdated" },
-                { front: "Apathy", back: "<strong>Not caring about something.</strong>\n\nExample: Tom showed apathy towards his homework and didn't even try to finish it.\nSynonyms: laziness, indifference" },
-                { front: "Appreciate", back: "<strong>To be thankful for something or to understand its value.</strong>\n\nExample: I appreciate all the hard work my teacher does to help me learn.\nSynonyms: value, be grateful" },
-                { front: "Apprehensive", back: "<strong>Feeling nervous or worried about something.</strong>\n\nExample: Emma felt apprehensive before her big test, but she did well in the end.\nSynonyms: nervous, anxious" },
-                { front: "Arduous", back: "<strong>Very hard and needing a lot of effort.</strong>\n\nExample: Climbing the tall mountain was an arduous journey.\nSynonyms: difficult, tiring" },
-                { front: "Argument", back: "<strong>A disagreement where people have different opinions.</strong>\n\nExample: The two friends had an an argument about which game to play at lunchtime.\nSynonyms: disagreement, dispute" },
-                { front: "Arid", back: "<strong>Very dry, with little or no rain.</strong>\n\nExample: The desert is an arid place where very few plants grow.\nSynonyms: dry, barren" },
-                { front: "Artful", back: "<strong>Clever or skilful in a tricky way.</strong>\n\nExample: The artful magician amazed the crowd with his tricks.\nSynonyms: clever, crafty" },
-                { front: "Articulate", back: "<strong>Able to speak clearly and explain things well.</strong>\n\nExample: Lily is very articulate when she presents her ideas in class.\nSynonyms: clear, expressive" },
-            ],
-            "11 plus vocabulary 4 .pdf": [
-                { front: "Artisan", back: "<strong>A person who is very skilled at making things by hand.</strong>\n\nExample: The artisan carefully carved a beautiful wooden statue.\nSynonyms: Craftsperson, Maker" },
-                { front: "Ashamed", back: "<strong>Feeling bad or guilty about something you did.</strong>\n\nExample: Mia was ashamed when she forgot to do her homework.\nSynonyms: Embarrassed, Guilty" },
-                { front: "Assemble", back: "<strong>To put things together to make something.</strong>\n\nExample: We had to assemble the puzzle before we could see the full picture.\nSynonyms: Build, Gather" },
-                { front: "Asunder", back: "<strong>Broken into pieces or pulled apart.</strong>\n\nExample: The old bridge was torn asunder by the strong storm.\nSynonyms: Apart, Split" },
-                { front: "Augur", back: "<strong>To show that something good or bad might happen in the future.</strong>\n\nExample: Dark clouds augur that a storm is coming.\nSynonyms: Predict, Foretell" },
-                { front: "Attempt", back: "<strong>To try to do something.</strong>\n\nExample: Ben made an attempt to climb the tree but slipped halfway.\nSynonyms: Try, Effort" },
-                { front: "Austerity", back: "<strong>Living in a very simple way, without extra things.</strong>\n\nExample: During the war, people had to live with austerity and use fewer resources.\nSynonyms: Simplicity, Strictness" },
-                { front: "Aversion", back: "<strong>A strong dislike for something.</strong>\n\nExample: Sam has an aversion to spicy food and never eats it.\nSynonyms: Dislike, Hatred" },
-                { front: "Avoid", back: "<strong>To stay away from something or someone.</strong>\n\nExample: I try to avoid stepping on puddles when walking to school.\nSynonyms: Stay away, Escape" },
-                { front: "Avuncular", back: "<strong>Being kind and friendly like an uncle.</strong>\n\nExample: Mr. Jones had an avuncular smile that made the children feel safe.\nSynonyms: Friendly, Kind" },
-                { front: "Barbaric", back: "<strong>Very cruel or violent.</strong>\n\nExample: The king's barbaric punishment frightened the villagers.\nSynonyms: Savage, Brutal" },
-            ],
-            "11 plus Vocabulary 6.pdf": [
-                { front: "Blissful", back: "<strong>Full of happiness and joy.</strong>\n\nExample: She felt blissful as she lay on the beach, listening to the waves.\nSynonyms: joyful, content" },
-                { front: "Blunder", back: "<strong>A careless or foolish mistake.</strong>\n\nExample: He made a terrible blunder by forgetting his best friend's birthday.\nSynonyms: mistake, error" },
-                { front: "Bolster", back: "<strong>To support or strengthen.</strong>\n\nExample: The teacher bolstered the student's confidence by praising his hard work.\nSynonyms: reinforce, support" },
-                { front: "Bravado", back: "<strong>A bold manner intended to impress or intimidate.</strong>\n\nExample: His bravado disappeared when he realised how high the cliff was.\nSynonyms: swagger, confidence" },
-                { front: "Brawn", back: "<strong>Physical strength.</strong>\n\nExample: It took a lot of brawn to lift the heavy box.\nSynonyms: muscle, power" },
-                { front: "Brusque", back: "<strong>Abrupt or blunt in manner.</strong>\n\nExample: The brusque reply made it clear he was in no mood to talk.\nSynonyms: curt, abrupt" },
-                { front: "Cache", back: "<strong>A hidden store of things, especially valuables.</strong>\n\nExample: The pirates hid their cache of treasure on the deserted island.\nSynonyms: hoard, stash" },
-                { front: "Calamity", back: "<strong>A disaster or great misfortune.</strong>\n\nExample: The flood was a calamity that left many people homeless.\nSynonyms: disaster, catastrophe" },
-                { front: "Candid", back: "<strong>Truthful and straightforward.</strong>\n\nExample: She gave a candid answer, even though it wasn't what he wanted to hear.\nSynonyms: honest, frank" },
-                { front: "Candidate", back: "<strong>A person who applies for a job or is nominated for a position.</strong>\n\nExample: There were three candidates running for school council president.\nSynonyms: applicant, nominee" },
-                { front: "Career", back: "<strong>A long-term job or profession.</strong>\n\nExample: He wanted a career in medicine because he loved helping people.\nSynonyms: profession, occupation" },
-                { front: "Charismatic", back: "<strong>Charming and able to attract and influence people.</strong>\n\nExample: The charismatic speaker captivated the entire audience.\nSynonyms: charming, persuasive" },
-            ],
-            "11 plus Vocabulary 7 .pdf": [
-                { front: "Charming", back: "<strong>Very pleasing or attractive.</strong>\n\nExample: The charming little cottage was surrounded by colorful flowers.\nSynonyms: Enchanting, delightful" },
-                { front: "Charred", back: "<strong>Burned or blackened due to heat.</strong>\n\nExample: The toast was so charred that it was completely inedible.\nSynonyms: Scorched, blackened" },
-                { front: "Coerce", back: "<strong>To force someone to do something against their will.</strong>\n\nExample: The bully tried to coerce his classmates into giving him their lunch money.\nSynonyms: Compel, pressure" },
-                { front: "Coherent", back: "<strong>Logical and easy to understand.</strong>\n\nExample: The teacher praised Jake's essay for being clear and coherent.\nSynonyms: Logical, consistent" },
-                { front: "Colloquial", back: "<strong>Informal or conversational in language.</strong>\n\nExample: His speech was filled with colloquial expressions that made it sound casual.\nSynonyms: Informal, conversational" },
-                { front: "Combination", back: "<strong>A mixture of different things put together.</strong>\n\nExample: The cake was a delicious combination of chocolate and vanilla flavors.\nSynonyms: Mixture, blend" },
-                { front: "Comical", back: "<strong>Funny or amusing.</strong>\n\nExample: The clown's comical antics made everyone laugh.\nSynonyms: Humorous, amusing" },
-                { front: "Commemorate", back: "<strong>To honor or remember someone or something.</strong>\n\nExample: The school held a special event to commemorate its 50th anniversary.\nSynonyms: Celebrate, honor" },
-                { front: "Compel", back: "<strong>To force someone to do something.</strong>\n\nExample: The strong wind seemed to compel us to move faster.\nSynonyms: Force, urge" },
-                { front: "Compliance", back: "<strong>The act of following rules or orders.</strong>\n\nExample: The company ensured compliance with safety regulations.\nSynonyms: Obedience, conformity" },
-                { front: "Comrade", back: "<strong>A friend, especially one who shares similar interests or experiences.</strong>\n\nExample: The soldiers treated each other as comrades, always looking out for one another.\nSynonyms: Companion, ally" },
-            ],
-            "11 Plus Vocabulary 8.pdf": [
-                { front: "Conceited", back: "<strong>Having an excessively favorable opinion of one's own ability or appearance.</strong>\n\nExample: She was so conceited that she thought she was the best at everything.\nSynonyms: arrogant, boastful" },
-                { front: "Conclusion", back: "<strong>The end or finish of an event or process.</strong>\n\nExample: At the conclusion of the story, the hero saved the day.\nSynonyms: ending, final part" },
-                { front: "Conclusive", back: "<strong>Providing something that is certain and final.</strong>\n\nExample: The scientist found conclusive evidence that proved the theory.\nSynonyms: definite, certain" },
-                { front: "Concur", back: "<strong>To agree with someone or something.</strong>\n\nExample: I concur with your idea because it makes sense.\nSynonyms: agree, support" },
-                { front: "Condemn", back: "<strong>To express complete disapproval of, typically in public.</strong>\n\nExample: The teacher had to condemn the rude behavior in class.\nSynonyms: criticise, punish" },
-                { front: "Condone", back: "<strong>To accept and allow (behavior that is considered wrong or offensive) to continue.</strong>\n\nExample: The school does not condone bullying of any kind.\nSynonyms: allow, accept" },
-                { front: "Conducive", back: "<strong>Making a certain situation or outcome likely or possible.</strong>\n\nExample: A quiet classroom is conducive to learning.\nSynonyms: helpful, beneficial" },
-                { front: "Confiscated", back: "<strong>Taken or seized with authority.</strong>\n\nExample: The teacher confiscated the toy because it was distracting the class.\nSynonyms: took away, seize" },
-                { front: "Conjecture", back: "<strong>An opinion or conclusion based on incomplete information.</strong>\n\nExample: His idea was just a conjecture since he had no proof.\nSynonyms: guess, prediction" },
-                { front: "Consent", back: "<strong>Permission for something to happen or agreement to do something.</strong>\n\nExample: You need a parent's consent to go on the school trip.\nSynonyms: permission, approval" },
-                { front: "Consequently", back: "<strong>As a result; therefore.</strong>\n\nExample: He forgot his homework; consequently, he had to stay in at break.\nSynonyms: therefore, as a result" },
-                { front: "Consideration", back: "<strong>Thoughtfulness for other people's feelings and well-being.</strong>\n\nExample: Out of consideration for others, she spoke quietly in the library.\nSynonyms: kindness, thoughtfulness" },
-            ],
-            "11 plus Vocabulary 9.pdf": [
-                { front: "Conspire", back: "<strong>To secretly plan something unlawful or harmful with others.</strong>\n\nExample: The rebels conspired to overthrow the government.\nSynonyms: plot, scheme" },
-                { front: "Consume", back: "<strong>To use up or eat/drink something.</strong>\n\nExample: The fire consumed the entire building within hours.\nSynonyms: devour, absorb" },
-                { front: "Contagious", back: "<strong>Spreading easily from one person to another.</strong>\n\nExample: Laughter is often contagious, making everyone around join in.\nSynonyms: infectious, transmissible" },
-                { front: "Contemporary", back: "<strong>Existing or happening at the same time; modern.</strong>\n\nExample: Many contemporary artists experiment with digital media.\nSynonyms: modern, present-day" },
-                { front: "Contrast", back: "<strong>A clear difference between two things.</strong>\n\nExample: The bright colours contrast sharply with the dark background.\nSynonyms: difference, distinction" },
-                { front: "Contrite", back: "<strong>Feeling deep guilt and remorse for wrongdoing.</strong>\n\nExample: He gave a contrite apology for his rude behaviour.\nSynonyms: remorseful, repentant" },
-                { front: "Conundrum", back: "<strong>A difficult problem or puzzle.</strong>\n\nExample: Deciding whether to move abroad or stay at home was a real conundrum.\nSynonyms: puzzle, dilemma" },
-                { front: "Convict", back: "<strong>To declare someone guilty of a crime.</strong>\n\nExample: The jury decided to convict the suspect after reviewing the evidence.\nSynonyms: sentence, condemn" },
-                { front: "Cordial", back: "<strong>Warm and friendly.</strong>\n\nExample: The hotel staff gave us a cordial welcome upon arrival.\nSynonyms: friendly, gracious" },
-                { front: "Covet", back: "<strong>To strongly desire something that belongs to someone else.</strong>\n\nExample: She coveted her friend's designer handbag.\nSynonyms: desire, yearn for" },
-                { front: "Coy", back: "<strong>Pretending to be shy or reserved.</strong>\n\nExample: She gave a coy smile when asked about her new boyfriend.\nSynonyms: shy, bashful" },
-            ],
-            "11 plus vocabulary 10.pdf": [
-                { front: "Crass", back: "<strong>Lacking sensitivity or intelligence.</strong>\n\nExample: His crass joke offended everyone at the dinner table.\nSynonyms: insensitive, tactless" },
-                { front: "Credit", back: "<strong>Praise or recognition for something well done.</strong>\n\nExample: She received full credit for her hard work on the project.\nSynonyms: recognition, acknowledgment" },
-                { front: "Cunning", back: "<strong>Clever at achieving goals, often by deceit.</strong>\n\nExample: The cunning fox tricked the farmer and stole his chickens.\nSynonyms: sly, crafty" },
-                { front: "Curb", back: "<strong>To control or limit something.</strong>\n\nExample: He tried to curb his appetite by eating healthy snacks.\nSynonyms: restrain, restrict" },
-                { front: "Curious", back: "<strong>Eager to learn or know something.</strong>\n\nExample: The curious child kept asking questions about space.\nSynonyms: inquisitive, questioning" },
-                { front: "Curt", back: "<strong>Rudely brief or abrupt.</strong>\n\nExample: His curt reply made it clear he didn't want to talk.\nSynonyms: brusque, terse" },
-                { front: "Dazzling", back: "<strong>Extremely bright or impressive.</strong>\n\nExample: The fireworks created a dazzling display in the night sky.\nSynonyms: brilliant, radiant" },
-                { front: "Debate", back: "<strong>A formal discussion or argument on a topic.</strong>\n\nExample: The students had a debate about the effects of technology on society.\nSynonyms: discussion, dispute" },
-                { front: "Decline", back: "<strong>To refuse or decrease.</strong>\n\nExample: She had to decline the invitation due to prior commitments.\nSynonyms: reject, diminish" },
-                { front: "Definite", back: "<strong>Clear and certain.</strong>\n\nExample: There was a definite improvement in his performance after training.\nSynonyms: clear, absolute" },
-                { front: "Defy", back: "<strong>To resist or refuse to obey.</strong>\n\nExample: The protesters chose to defy the new law by marching in the streets.\nSynonyms: challenge, resist" },
-                { front: "Deject", back: "<strong>To make someone feel sad or disheartened.</strong>\n\nExample: Losing the championship left the team feeling dejected.\nSynonyms: depress, dishearten" },
-                { front: "Deluge", back: "<strong>A great flood or an overwhelming amount of something.</strong>\n\nExample: The sudden deluge of emails overwhelmed her inbox.\nSynonyms: flood, overflow" },
-            ],
-            "11 Plus Vocabulary 11.pdf": [
-                { front: "Demolish", back: "<strong>To destroy or tear something down completely.</strong>\n\nExample: The old house was demolished to make space for a new shopping mall.\nSynonyms: Destroy, Wreck" },
-                { front: "Demolished", back: "<strong>Having been completely destroyed or torn down.</strong>\n\nExample: The storm demolished several buildings in the town.\nSynonyms: Ruined, Shattered" },
-                { front: "Demure", back: "<strong>Quiet, modest, and shy.</strong>\n\nExample: The demure girl spoke softly and politely to everyone.\nSynonyms: Modest, Shy" },
-                { front: "Depict", back: "<strong>To show or describe something in words, pictures, or drawings.</strong>\n\nExample: The painting depicts a beautiful sunset over the ocean.\nSynonyms: Portray, Illustrate" },
-                { front: "Desist", back: "<strong>To stop doing something.</strong>\n\nExample: The teacher told the students to desist from talking during the lesson.\nSynonyms: Stop, Cease" },
-                { front: "Destitute", back: "<strong>Extremely poor, lacking basic necessities.</strong>\n\nExample: The charity helps destitute families by providing food and shelter.\nSynonyms: Poor, Penniless" },
-                { front: "Develop", back: "<strong>To grow, improve, or become more advanced.</strong>\n\nExample: She wants to develop her skills in painting.\nSynonyms: Grow, Improve" },
-                { front: "Devise", back: "<strong>To plan or invent a way of doing something.</strong>\n\nExample: The engineers devised a new way to generate electricity.\nSynonyms: Invent, Create" },
-                { front: "Devour", back: "<strong>To eat something quickly and eagerly.</strong>\n\nExample: After playing outside, he devoured his lunch in minutes.\nSynonyms: Gobble, Consume" },
-                { front: "Diction", back: "<strong>The way someone pronounces words or their choice of words in speaking or writing.</strong>\n\nExample: The actor's clear diction made it easy to understand his speech.\nSynonyms: Pronunciation, Articulation" },
-                { front: "Digest", back: "<strong>To break down food in the stomach; to understand information.</strong>\n\nExample: She took a moment to digest the new information.\nSynonyms: Absorb, Process" },
-            ],
-            "11 Plus Vocabulary 12.pdf": [
-                { front: "Digress", back: "<strong>To go off-topic while talking or writing.</strong>\n\nExample: Tom started talking about his weekend and digressed from the lesson.\nSynonyms: Wander, drift" },
-                { front: "Digression", back: "<strong>A short break from the main topic in speech or writing.</strong>\n\nExample: Our teacher made a funny digression about her pet before continuing the lesson.\nSynonyms: Side-track, detour" },
-                { front: "Diligent", back: "<strong>Working hard and carefully.</strong>\n\nExample: She was diligent in finishing her homework neatly and on time.\nSynonyms: Hardworking, careful" },
-                { front: "Diluted", back: "<strong>Made weaker by adding something, like water.</strong>\n\nExample: He diluted the juice by adding more water to it.\nSynonyms: Weakened, watered-down" },
-                { front: "Dim", back: "<strong>Not bright or clear.</strong>\n\nExample: The light in the room was too dim to read my book.\nSynonyms: Faint, dull" },
-                { front: "Diminish", back: "<strong>To make smaller or less.</strong>\n\nExample: The sound of the music began to diminish as we walked away.\nSynonyms: Reduce, shrink" },
-                { front: "Discredit", back: "<strong>To make someone or something seem untrustworthy.</strong>\n\nExample: Spreading lies can discredit a person's good name.\nSynonyms: Blame, dishonour" },
-                { front: "Dishevelled", back: "<strong>Messy or untidy.</strong>\n\nExample: After playing outside, his hair looked dishevelled.\nSynonyms: Scruffy, messy" },
-                { front: "Dismal", back: "<strong>Dark, gloomy, or sad.</strong>\n\nExample: The rainy weather made the day feel dismal.\nSynonyms: Gloomy, miserable" },
-                { front: "Disperse", back: "<strong>To spread out in different directions.</strong>\n\nExample: The children dispersed across the playground after the bell rang.\nSynonyms: Scatter, spread" },
-                { front: "Docile", back: "<strong>Calm and easy to teach.</strong>\n\nExample: The dog was docile and listened to every command.\nSynonyms: Obedient, gentle" },
-                { front: "Divine", back: "<strong>Very beautiful or wonderful.</strong>\n\nExample: The cake tasted divine, like something from a bakery.\nSynonyms: Amazing, heavenly" },
-            ],
-            "11 plus vocabulary 13.pdf": [
-                { front: "Dogmatic", back: "<strong>Always believing you are right and not willing to change your ideas.</strong>\n\nExample: The teacher was dogmatic and didn't let anyone argue with her rules.\nSynonyms: stubborn, strict" },
-                { front: "Domestic", back: "<strong>Related to the home or family.</strong>\n\nExample: The cat is a domestic animal that lives in people's homes.\nSynonyms: home, household" },
-                { front: "Dormant", back: "<strong>Not active at the moment but might become active later.</strong>\n\nExample: The volcano is dormant and hasn't erupted in many years.\nSynonyms: asleep, inactive" },
-                { front: "Dose", back: "<strong>A measured amount of medicine.</strong>\n\nExample: Mum gave me a dose of cough syrup before bedtime.\nSynonyms: portion, amount" },
-                { front: "Doubtful", back: "<strong>Not sure or uncertain.</strong>\n\nExample: I was doubtful that we would finish the puzzle in time.\nSynonyms: unsure, uncertain" },
-                { front: "Dour", back: "<strong>Serious and unfriendly.</strong>\n\nExample: The dour man at the shop never smiled or said hello.\nSynonyms: stern, gloomy" },
-                { front: "Draconian", back: "<strong>Very harsh or severe.</strong>\n\nExample: The school's draconian rules meant no one could even whisper in class.\nSynonyms: cruel, strict" },
-                { front: "Dutiful", back: "<strong>Doing what you are supposed to do.</strong>\n\nExample: The dutiful child always cleaned her room without being told.\nSynonyms: responsible, obedient" },
-                { front: "Egoistical", back: "<strong>Thinking too much about yourself.</strong>\n\nExample: He was so egoistical that he only talked about himself.\nSynonyms: selfish, proud" },
-                { front: "Elementary", back: "<strong>Simple or basic.</strong>\n\nExample: The maths questions were elementary and easy to solve.\nSynonyms: simple, basic" },
-                { front: "Eloquence", back: "<strong>The ability to speak or write well.</strong>\n\nExample: The girl spoke with such eloquence that everyone listened quietly.\nSynonyms: fluency, expression" }
-            ],
+            const statusMessageEl = document.getElementById('status-message');
+            const deckEl = document.getElementById('flashcard-deck');
+            const cardDisplayEl = document.getElementById('card-display');
+            const cardInnerEl = document.getElementById('card-inner');
+            const cardFrontContentEl = document.getElementById('card-front-content');
+            const cardBackContentEl = document.getElementById('card-back-content');
+            const cardIndexEl = document.getElementById('card-index');
+            const cardCountEl = document.getElementById('card-count');
+            const prevButton = document.getElementById('prev-button');
+            const nextButton = document.getElementById('next-button');
+            const setSelector = document.getElementById('set-selector');
 
-            // --- NEW BATCH 10-32 (as provided previously) ---
-            "11 Plus Vocabulary 23.pdf": [
-                { front: "Labour", back: "<strong>Hard and physical work.</strong>\n\nExample: The builders did a lot of labour to finish the new school.\nSynonyms: Work, effort" },
-                { front: "Labyrinth", back: "<strong>A confusing maze with hard-to-follow paths.</strong>\n\nExample: We got lost in the garden's labyrinth!\nSynonyms: Maze, puzzle" },
-                { front: "Lackadaisical", back: "<strong>Not showing much interest or effort.</strong>\n\nExample: He gave a lackadaisical answer in class and didn't seem to care.\nSynonyms: Lazy, careless" },
-                { front: "Lair", back: "<strong>A hidden home for a wild or dangerous animal.</strong>\n\nExample: The fox returned to its lair in the woods.\nSynonyms: Den, hideout" },
-                { front: "Lament", back: "<strong>To show sadness, usually by crying or speaking sadly.</strong>\n\nExample: She began to lament the loss of her pet.\nSynonyms: Mourn, grieve" },
-                { front: "Languorous", back: "<strong>Very still and without energy or activity.</strong>\n\nExample: The hot weather made everyone feel languorous and sleepy.\nSynonyms: Weak, sluggish" },
-                { front: "Latter", back: "<strong>Closer to the end of something, not the beginning.</strong>\n\nExample: In the latter part of the day, we had golden time.\nSynonyms: Last, final" },
-                { front: "Lavish", back: "<strong>Very fancy and more than what is needed.</strong>\n\nExample: They had a lavish birthday party with so many decorations and cakes!\nSynonyms: Fancy, extravagant" },
-                { front: "Liable", back: "<strong>Legally responsible for something.</strong>\n\nExample: He is liable for the damage he caused to the window.\nSynonyms: Responsible, accountable" },
-                { front: "Libel", back: "<strong>Writing something untrue and harmful about someone.</strong>\n\nExample: The newspaper had to apologise for printing libel about the singer.\nSynonyms: Slander, false claim" },
-                { front: "Liberate", back: "<strong>To set someone free from being controlled.</strong>\n\nExample: The hero helped to liberate the trapped villagers.\nSynonyms: Free, release" },
-                { front: "Liberty", back: "<strong>Freedom to do what you choose.</strong>\n\nExample: In our country, people have the liberty to share their ideas.\nSynonyms: Freedom, independence" },
-            ],
-            "11 Plus Vocabulary 24.pdf": [
-                { front: "Lieu", back: "<strong>In place of something else.</strong>\n\nExample: She worked on Saturday in lieu of taking Friday off.\nSynonyms: Instead, Substitute" },
-                { front: "Limb", back: "<strong>A body part that comes from the body, e.g. an arm or leg.</strong>\n\nExample: He injured his limb while climbing the tree.\nSynonyms: Arm, Leg" },
-                { front: "Linger", back: "<strong>To hang around in a place for a long period.</strong>\n\nExample: The scent of her perfume lingered long after she left.\nSynonyms: Loiter, Dawdle" },
-                { front: "Litigation", back: "<strong>Settling an argument between two people by taking it to court.</strong>\n\nExample: The company faced years of costly litigation.\nSynonyms: Lawsuit, Legal action" },
-                { front: "Lexis", back: "<strong>The words that make up a language.</strong>\n\nExample: A child's lexis grows as they learn to speak and read.\nSynonyms: Vocabulary, Terminology" },
-                { front: "Lodge", back: "<strong>A small habitat where you stay temporarily.</strong>\n\nExample: They stayed in a wooden lodge near the lake.\nSynonyms: Cabin, Hut" },
-                { front: "Lofty", back: "<strong>High up and tall.</strong>\n\nExample: The eagle built its nest on a lofty cliff.\nSynonyms: Towering, Elevated" },
-                { front: "Louche", back: "<strong>Something that is questionable and not very moral or reliable.</strong>\n\nExample: He had a louche reputation and was often in trouble with the law.\nSynonyms: Disreputable, Shady" },
-                { front: "Loyal", back: "<strong>Supporting and being faithful to something regardless of circumstance.</strong>\n\nExample: The dog remained loyal to its owner until the very end.\nSynonyms: Faithful, Devoted" },
-                { front: "Lunar", back: "<strong>Something that relates to or resembles the moon.</strong>\n\nExample: The astronauts studied lunar rocks collected from the surface.\nSynonyms: Moonlike, Celestial" },
-                { front: "Magnanimous", back: "<strong>Being kind or forgiving towards an enemy or competitor.</strong>\n\nExample: She was magnanimous in victory and praised her opponent.\nSynonyms: Generous, Noble" },
-                { front: "Magnetic", back: "<strong>Something that strongly attracts something else.</strong>\n\nExample: His magnetic personality drew everyone to him.\nSynonyms: Alluring, Attractive" },
-            ],
-            "11 Plus Vocabulary 25 .pdf": [
-                { front: "Malefactor", back: "<strong>A person who does something illegal or wrong.</strong>\n\nExample: The malefactor was caught stealing from the shop.\nSynonyms: criminal, wrongdoer" },
-                { front: "Malevolent", back: "<strong>Wishing to hurt or harm others; being cruel.</strong>\n\nExample: The villain had a malevolent grin as he plotted his revenge.\nSynonyms: evil, spiteful" },
-                { front: "Malinger", back: "<strong>To pretend to be ill to avoid doing work.</strong>\n\nExample: She tried to malinger by faking a cough to skip school.\nSynonyms: skive, fake" },
-                { front: "Meagre", back: "<strong>Very small in amount or not enough.</strong>\n\nExample: They had a meagre lunch of just one slice of bread.\nSynonyms: tiny, insufficient" },
-                { front: "Meander", back: "<strong>To move slowly without a clear direction.</strong>\n\nExample: We watched the river meander through the valley.\nSynonyms: wander, drift" },
-                { front: "Meant", back: "<strong>To have intended or planned something.</strong>\n\nExample: I meant to help you, but I got distracted.\nSynonyms: intended, planned" },
-                { front: "Measly", back: "<strong>A very small and disappointing amount.</strong>\n\nExample: He was given a measly portion of chips.\nSynonyms: pitiful, tiny" },
-                { front: "Meek", back: "<strong>Gentle and quiet; not likely to argue or speak up.</strong>\n\nExample: The meek puppy followed its owner without a sound.\nSynonyms: mild, timid" },
-                { front: "Melodious", back: "<strong>Sounding pleasant and musical.</strong>\n\nExample: Her melodious singing made everyone smile.\nSynonyms: tuneful, harmonious" },
-                { front: "Mercy", back: "<strong>Kindness shown to someone you could punish.</strong>\n\nExample: The teacher showed mercy and gave him another chance.\nSynonyms: compassion, forgiveness" },
-                { front: "Mere", back: "<strong>Used to show how small or simple something is.</strong>\n\nExample: He lost the race by a mere second.\nSynonyms: only, slight" },
-                { front: "Meticulous", back: "<strong>Being very careful and paying close attention to detail.</strong>\n\nExample: She was meticulous when painting her model.\nSynonyms: precise, thorough" },
-                { front: "Mock", back: "<strong>To make fun of someone or laugh at them.</strong>\n\nExample: The children were told not to mock others.\nSynonyms: tease, ridicule" },
-                { front: "Monochrome", back: "<strong>Made using only black, white, and grey tones.</strong>\n\nExample: The artist drew a striking monochrome picture of a city.\nSynonyms: black-and-white, greyscale" },
-            ],
-            "11 Plus Vocabulary 26.pdf": [
-                { front: "Moral", back: "<strong>The standards you have of what is right and wrong.</strong>\n\nExample: She made a moral choice to tell the truth even though it was difficult.\nSynonyms: Ethical, virtuous" },
-                { front: "Mortal", back: "<strong>Ordinary and will not live forever.</strong>\n\nExample: All humans are mortal, which is why life is so precious.\nSynonyms: Human, perishable" },
-                { front: "Muse", back: "<strong>Inspiration for a person who is creating art.</strong>\n\nExample: The mountain view became the artist's muse for her new painting.\nSynonyms: Inspiration, influence" },
-                { front: "Myriad", back: "<strong>A very high quantity.</strong>\n\nExample: The sky was filled with a myriad of stars.\nSynonyms: Countless, numerous" },
-                { front: "Neat", back: "<strong>Ordered and in good condition.</strong>\n\nExample: His desk was always neat and free of clutter.\nSynonyms: Tidy, orderly" },
-                { front: "Necessary", back: "<strong>An essential requirement for a specific result.</strong>\n\nExample: Water is necessary for plants to grow.\nSynonyms: Essential, required" },
-                { front: "Nemesis", back: "<strong>Something that can't be defeated and is always one step ahead.</strong>\n\nExample: The detective's clever nemesis escaped once again.\nSynonyms: Rival, adversary" },
-                { front: "Nirvana", back: "<strong>A place of peace away from all suffering.</strong>\n\nExample: After a long day, a warm bath felt like nirvana.\nSynonyms: Bliss, paradise" },
-                { front: "Nominal", back: "<strong>A small cost.</strong>\n\nExample: The museum charged a nominal fee for entry.\nSynonyms: Minimal, symbolic" },
-                { front: "Novice", back: "<strong>New to an activity and has not experienced it before.</strong>\n\nExample: As a novice swimmer, she needed some extra lessons.\nSynonyms: Beginner, newcomer" },
-                { front: "Oath", back: "<strong>A promise, often made in law, to tell the truth.</strong>\n\nExample: He took an oath to tell the truth in court.\nSynonyms: Promise, vow" },
-            ],
-            "11 Plus Vocabulary 27.pdf": [
-                { front: "Objection", back: "<strong>Disagreeing and having a differing opinion.</strong>\n\nExample: She raised an objection to the new rule, stating it was unfair.\nSynonyms: protest, disagreement" },
-                { front: "Oblique", back: "<strong>On a slant or angle.</strong>\n\nExample: The artist painted an oblique line across the canvas.\nSynonyms: slanted, angled" },
-                { front: "Obtuse", back: "<strong>Not sharp or alert with understanding.</strong>\n\nExample: He was too obtuse to realise he had offended her.\nSynonyms: slow, dull" },
-                { front: "Obviate", back: "<strong>To predict a challenge and remove it in advance.</strong>\n\nExample: Careful planning can obviate the need for last-minute decisions.\nSynonyms: prevent, eliminate" },
-                { front: "Oppress", back: "<strong>Burdening a person or group of people and making them feel uncomfortable.</strong>\n\nExample: The regime continued to oppress the minority group through unfair laws.\nSynonyms: persecute, suppress" },
-                { front: "Ostentatious", back: "<strong>Seeking to impress people with your wealth and using this to attract attention.</strong>\n\nExample: He wore an ostentatious gold watch to show off his success.\nSynonyms: showy, flashy" },
-                { front: "Overt", back: "<strong>Obvious and not concealed away.</strong>\n\nExample: Her overt excitement made everyone smile.\nSynonyms: clear, visible" },
-                { front: "Palpable", back: "<strong>Something right in front of you that can be perceived.</strong>\n\nExample: The tension in the room was almost palpable.\nSynonyms: noticeable, tangible" },
-                { front: "Palpitate", back: "<strong>Heartbeat that is not regular. Faster than usual and usually due to excitement or nerves.</strong>\n\nExample: His heart began to palpitate as he waited for the results.\nSynonyms: throb, flutter" },
-                { front: "Pandemonium", back: "<strong>Noisy situation with no order.</strong>\n\nExample: There was pandemonium in the hall when the fire alarm went off.\nSynonyms: chaos, uproar" },
-                { front: "Pander", back: "<strong>To act sensitively towards someone and give them what they want.</strong>\n\nExample: The film seemed to pander to the audience rather than challenge them.\nSynonyms: indulge, appease" },
-                { front: "Paradox", back: "<strong>Something that seems true but cannot be possible.</strong>\n\nExample: It's a paradox that standing is more tiring than walking.\nSynonyms: contradiction, inconsistency" },
-            ],
-            "11 Plus Vocabulary 28.pdf": [
-                { front: "Parallel", back: "<strong>Two things running alongside each other staying the same distance apart.</strong>\n\nExample: The two train tracks ran parallel to each other for miles.\nSynonyms: side-by-side, aligned" },
-                { front: "Paraphrase", back: "<strong>Reword something using fewer words or in your own words.</strong>\n\nExample: The teacher asked the pupil to paraphrase the paragraph to show understanding.\nSynonyms: reword, summarise" },
-                { front: "Parody", back: "<strong>A humorous style of work.</strong>\n\nExample: The comedy show performed a funny parody of a famous superhero film.\nSynonyms: imitation, satire" },
-                { front: "Parsimonious", back: "<strong>Strict with money - unwilling to spend a large amount.</strong>\n\nExample: He was so parsimonious that he reused teabags to save money.\nSynonyms: stingy, frugal" },
-                { front: "Peculiar", back: "<strong>Different to the norm and can be seen as strange.</strong>\n\nExample: The dog had a peculiar habit of walking backwards.\nSynonyms: odd, unusual" },
-                { front: "Pensive", back: "<strong>Thinking deeply and carefully about something.</strong>\n\nExample: She sat in a pensive mood, staring out of the window.\nSynonyms: thoughtful, reflective" },
-                { front: "Perambulate", back: "<strong>To walk leisurely with no rush and no destination.</strong>\n\nExample: They decided to perambulate through the countryside after lunch.\nSynonyms: stroll, wander" },
-                { front: "Perjury", back: "<strong>To lie when giving a testimony under oath in court.</strong>\n\nExample: The witness was charged with perjury after telling a lie during the trial.\nSynonyms: lying, false testimony" },
-                { front: "Perplexed", back: "<strong>Completely confused and puzzled by something.</strong>\n\nExample: He was perplexed by the complicated instructions.\nSynonyms: confused, bewildered" },
-                { front: "Persona", back: "<strong>The way someone is perceived based on how they present themselves.</strong>\n\nExample: Although she acted confidently at school, that was just her public persona.\nSynonyms: image, identity" },
-                { front: "Pestilence", back: "<strong>A serious epidemic that kills lots of people and spreads quickly.</strong>\n\nExample: The pestilence swept through the city, leaving devastation behind.\nSynonyms: plague, epidemic" },
-            ],
-            "11 Plus Vocabulary 29.pdf": [
-                { front: "Petty", back: "<strong>Something of little significance and isn't very important.</strong>\n\nExample: He was always arguing over petty things that didn't matter.\nSynonyms: trivial, insignificant" },
-                { front: "Petulant", back: "<strong>Acting in a childish way and being irritated by something.</strong>\n\nExample: She became petulant when she didn't get her way.\nSynonyms: irritable, moody" },
-                { front: "Picturesque", back: "<strong>Beautiful to look at and looks like art.</strong>\n\nExample: The village was picturesque, like something from a painting.\nSynonyms: scenic, charming" },
-                { front: "Pioneer", back: "<strong>One of the first people to do something.</strong>\n\nExample: She was a pioneer in space exploration.\nSynonyms: trailblazer, forerunner" },
-                { front: "Pivotal", back: "<strong>An important and critical part of something that determines the outcome.</strong>\n\nExample: His goal was pivotal in winning the match.\nSynonyms: crucial, vital" },
-                { front: "Placid", back: "<strong>Very calm and laid back.</strong>\n\nExample: The lake looked placid as the sun began to rise.\nSynonyms: peaceful, serene" },
-                { front: "Platitude", back: "<strong>Not very exciting and happens a lot.</strong>\n\nExample: His speech was full of platitudes and empty promises.\nSynonyms: cliché, overused saying" },
-                { front: "Pleasing", back: "<strong>Something agreeable that has an enjoyable outcome.</strong>\n\nExample: Her music had a pleasing rhythm that everyone enjoyed.\nSynonyms: delightful, satisfying" },
-                { front: "Pledge", back: "<strong>A promise of something.</strong>\n\nExample: They made a pledge to help each other no matter what.\nSynonyms: promise, vow" },
-                { front: "Plight", back: "<strong>A bad situation that is often unpleasant and can be dangerous.</strong>\n\nExample: The documentary showed the plight of the endangered animals.\nSynonyms: predicament, hardship" },
-                { front: "Plunge", back: "<strong>To move something quickly and forcibly into something else.</strong>\n\nExample: He decided to plunge into the cold sea without hesitation.\nSynonyms: dive, thrust" },
-                { front: "Pragmatic", back: "<strong>A sensible solution acting reasonably and logically.</strong>\n\nExample: She took a pragmatic approach to solving the school's problems.\nSynonyms: practical, realistic" },
-                { front: "Preposterous", back: "<strong>Shocking news or behaviour that seems completely unreasonable.</strong>\n\nExample: The idea that cats can fly is preposterous.\nSynonyms: absurd, ridiculous" },
-                { front: "Pompous", back: "<strong>Acting in a self-important and arrogant way.</strong>\n\nExample: The professor gave a pompous speech that no one enjoyed.\nSynonyms: arrogant, pretentious" },
-            ],
-            "11 Plus Vocabulary 30.pdf": [
-                { front: "Ponder", back: "<strong>To think carefully about something.</strong>\n\nExample: I had to ponder the puzzle before I answered.\nSynonyms: consider, reflect" },
-                { front: "Porous", back: "<strong>Full of tiny holes that let liquids or gases pass through.</strong>\n\nExample: The sponge is porous, so water drips through it.\nSynonyms: permeable, leaky" },
-                { front: "Posit", back: "<strong>To put forward an idea as a possible fact or explanation.</strong>\n\nExample: In science class, Amira posited that plants grow faster with more light.\nSynonyms: suggest, propose" },
-                { front: "Pragmatic", back: "<strong>Sensible and practical when solving problems.</strong>\n\nExample: We took a pragmatic approach and made a simple plan we could follow.\nSynonyms: practical, sensible" },
-                { front: "Prattle", back: "<strong>To talk on and on in a childish way that makes little sense.</strong>\n\nExample: The toddlers prattled about cartoons until bedtime.\nSynonyms: babble, chatter" },
-                { front: "Precocious", back: "<strong>Developing skills earlier than is usual for your age.</strong>\n\nExample: The precocious child solved the riddle before the adults.\nSynonyms: advanced, ahead" },
-                { front: "Predator", back: "<strong>An animal that hunts, kills, and eats other animals.</strong>\n\nExample: The lion is a predator that hunts zebras on the savannah.\nSynonyms: hunter, carnivore" },
-                { front: "Prejudice", back: "<strong>An unfair opinion formed without all the facts.</strong>\n\nExample: We should challenge prejudice by learning the facts about people.\nSynonyms: bias, preconception" },
-                { front: "Presumptuous", back: "<strong>Doing something too bold or rude by ignoring limits or rules.</strong>\n\nExample: It was presumptuous of Sam to assume he could skip the queue.\nSynonyms: overconfident, cheeky" },
-                { front: "Pretence", back: "<strong>A false show or claim to make people believe something.</strong>\n\nExample: He made a pretence of being asleep when Mum came in.\nSynonyms: act, charade" },
-                { front: "Procure", back: "<strong>To get or obtain something, often with effort.</strong>\n\nExample: The school managed to procure extra art supplies for the project.\nSynonyms: get, obtain" },
-                { front: "Profess", back: "<strong>To say or declare something openly as true.</strong>\n\nExample: Liam professed that he had finished his homework.\nSynonyms: declare, claim" },
-            ],
-            "11 Plus Vocabulary 31 .pdf": [
-                { front: "Profit", back: "<strong>Money that is left over from a business after all the money you spent has been deducted.</strong>\n\nExample: The shop made a good profit after selling all the toys.\nSynonyms: earnings, gain" },
-                { front: "Proportion", back: "<strong>The amount of something in comparison to the whole.</strong>\n\nExample: A large proportion of the class voted for the trip.\nSynonyms: fraction, part" },
-                { front: "Proverb", back: "<strong>A short sentence or couple of sentences that share a story of advice.</strong>\n\nExample: \"A stitch in time saves nine\" is a well-known proverb.\nSynonyms: saying, maxim" },
-                { front: "Provoke", back: "<strong>To cause someone to behave in an angry way.</strong>\n\nExample: His rude words began to provoke the crowd.\nSynonyms: irritate, anger" },
-                { front: "Prudent", back: "<strong>Acting carefully and thoughtfully.</strong>\n\nExample: It is prudent to save money for emergencies.\nSynonyms: wise, cautious" },
-                { front: "Public", back: "<strong>Not private and can be accessed by anyone.</strong>\n\nExample: The park is open to the public every day.\nSynonyms: communal, open" },
-                { front: "Puncture", back: "<strong>A small hole in something made by something sharp.</strong>\n\nExample: The cyclist had to fix a puncture in his tyre.\nSynonyms: hole, tear" },
-                { front: "Quintessential", back: "<strong>A normal and regular example of something.</strong>\n\nExample: She is the quintessential teacher, always kind and patient.\nSynonyms: typical, classic" },
-                { front: "Quiver", back: "<strong>To shake due to emotions.</strong>\n\nExample: He began to quiver with fear before the exam.\nSynonyms: tremble, shake" },
-                { front: "Ramble", back: "<strong>A gentle walk for pleasure - often walking around aimlessly.</strong>\n\nExample: We went for a ramble through the fields on Sunday.\nSynonyms: stroll, wander" },
-                { front: "Ramification", back: "<strong>The result of an event and the actions you might have to take due to this.</strong>\n\nExample: The new law has many unexpected ramifications.\nSynonyms: consequence, outcome" },
-                { front: "Ransack", back: "<strong>Stealing from somewhere, causing a mess as you search through for items to steal.</strong>\n\nExample: The burglars ransacked the house looking for valuables.\nSynonyms: plunder, loot" },
-                { front: "Rare", back: "<strong>Something that is uncommon and does not happen or appear often.</strong>\n\nExample: It is rare to see a shooting star in the city.\nSynonyms: unusual, uncommon" },
-            ],
-            "11 Plus Vocabulary 32 (1).pdf": [
-                { front: "Ratify", back: "<strong>Signing something to agree with the terms set out.</strong>\n\nExample: The countries met to ratify the peace treaty.\nSynonyms: Approve, Confirm" },
-                { front: "Ravenous", back: "<strong>Very hungry and needing to eat soon.</strong>\n\nExample: After football practice, he was ravenous and ate three sandwiches.\nSynonyms: Starving, Famished" },
-                { front: "Recite", back: "<strong>Speak something out loud from memory without notes.</strong>\n\nExample: She had to recite the poem in front of the whole class.\nSynonyms: Repeat, Deliver" },
-                { front: "Reel", back: "<strong>A cylinder shape used for storing string.</strong>\n\nExample: The fisherman wound the line back onto the reel.\nSynonyms: Spool, Bobbin" },
-                { front: "Refuse", back: "<strong>Denying and unwilling to accept or participate in something.</strong>\n\nExample: He decided to refuse the invitation to the party.\nSynonyms: Reject, Decline" },
-                { front: "Regurgitate", back: "<strong>To repeat information that has been given to you.</strong>\n\nExample: The student could only regurgitate facts without understanding them.\nSynonyms: Repeat, Echo" },
-                { front: "Relish", back: "<strong>To love doing something and enjoy the experience.</strong>\n\nExample: She would relish the chance to travel abroad again.\nSynonyms: Enjoy, Delight in" },
-                { front: "Remnant", back: "<strong>A small part of something that is left over and unused.</strong>\n\nExample: He used a remnant of cloth to patch the hole.\nSynonyms: Scrap, Fragment" },
-                { front: "Repel", back: "<strong>To reject something and forcefully back away from it.</strong>\n\nExample: The soldiers tried to repel the enemy attack.\nSynonyms: Resist, Push back" },
-                { front: "Repent", back: "<strong>To be sorry and apologetic about something you have done.</strong>\n\nExample: She began to repent for her harsh words.\nSynonyms: Regret, Apologise" },
-                { front: "Reproach", back: "<strong>Disappointed in someone and blame them for a negative outcome.</strong>\n\nExample: His teacher looked at him with reproach after the test.\nSynonyms: Blame, Disapproval" },
-                { front: "Rhyme", back: "<strong>Words that sound similar due to their ending sounds.</strong>\n\nExample: \"Cat\" and \"hat\" make a simple rhyme.\nSynonyms: Verse, Poem" },
-            ],
+            function initializeApp() {
+                try {
+                    // Check if data loaded
+                    if (typeof VOCAB_BY_SET === 'undefined' || !VOCAB_BY_SET) {
+                        setSelector.innerHTML = '<option>Error: Data not found</option>';
+                        setStatus("Error: Could not load vocabulary data from set.js. The file might be missing or broken.", true);
+                        return;
+                    }
 
-            // --- NEW 8 SETS (as requested now) ---
-            "11 plus vocabulary 14.pdf": [
-                { front: "Elucidate", back: "<strong>To explain something clearly.</strong>\n\nExample: The teacher asked Mia to elucidate her answer so everyone could understand.\nSynonyms: explain, clarify" },
-                { front: "Embargo", back: "<strong>A rule that stops trade with a country.</strong>\n\nExample: The country placed an embargo on fruit from other nations.\nSynonyms: ban, block" },
-                { front: "Embrace", back: "<strong>To hug someone or to accept something.</strong>\n\nExample: Lily gave her mum a warm embrace before school.\nSynonyms: hug, accept" },
-                { front: "Empire", back: "<strong>A group of countries ruled by one leader or country.</strong>\n\nExample: The Roman Empire was one of the biggest in history.\nSynonyms: kingdom, realm" },
-                { front: "Emulate", back: "<strong>To try to be like someone you admire.</strong>\n\nExample: Jack tried to emulate his big brother by practising football every day.\nSynonyms: copy, imitate" },
-                { front: "Endorse", back: "<strong>To say you support or agree with something.</strong>\n\nExample: The famous singer endorsed a new brand of trainers.\nSynonyms: support, approve" },
-                { front: "Endure", back: "<strong>To go through something difficult and not give up.</strong>\n\nExample: The climbers had to endure cold winds to reach the top of the mountain.\nSynonyms: suffer, withstand" },
-                { front: "Enterprise", back: "<strong>A project or business, especially a new or difficult one.</strong>\n\nExample: Starting a cake shop was a brave enterprise for the sisters.\nSynonyms: project, business" },
-                { front: "Enthuse", back: "<strong>To talk excitedly or show a lot of excitement.</strong>\n\nExample: Joe began to enthuse about his trip to the zoo.\nSynonyms: cheer, excite" },
-                { front: "Entire", back: "<strong>The whole of something.</strong>\n\nExample: Lucy ate the entire chocolate bar by herself!\nSynonyms: whole, complete" },
-                { front: "Epiphany", back: "<strong>A sudden and clear idea or realisation.</strong>\n\nExample: While reading the book, Max had an epiphany about the ending.\nSynonyms: realisation, discovery" },
-                { front: "Equivocate", back: "<strong>To avoid telling the truth clearly or to be unclear.</strong>\n\nExample: When asked if he broke the vase, Sam began to equivocate.\nSynonyms: hesitate, waffle" },
-                { front: "Era", back: "<strong>A period of time in history.</strong>\n\nExample: The dinosaurs lived in a very different era.\nSynonyms: period, age" },
-            ],
-            "11 plus Vocabulary 15.pdf": [
-                { front: "Erect", back: "<strong>To build or put up something in an upright position.</strong>\n\nExample: The workers will erect a new bridge over the river.\nSynonyms: build, construct" },
-                { front: "Erratic", back: "<strong>Acting in a way that is not regular or predictable.</strong>\n\nExample: His erratic driving made everyone nervous.\nSynonyms: unpredictable, irregular" },
-                { front: "Especially", back: "<strong>More than usual; particularly.</strong>\n\nExample: I love ice cream, especially chocolate flavour.\nSynonyms: particularly, mainly" },
-                { front: "Etiquette", back: "<strong>Rules about polite behaviour in society.</strong>\n\nExample: It is good etiquette to say \"please\" and \"thank you.\"\nSynonyms: manners, politeness" },
-                { front: "Exaggerate", back: "<strong>To make something seem bigger, better, or worse than it really is.</strong>\n\nExample: He likes to exaggerate how many goals he scored.\nSynonyms: overstate, embellish" },
-                { front: "Exclaim", back: "<strong>To speak suddenly and loudly because of surprise or strong emotion.</strong>\n\nExample: \"Wow, that's amazing!\" she exclaimed.\nSynonyms: shout, cry out" },
-                { front: "Facilitate", back: "<strong>To make something easier.</strong>\n\nExample: Computers facilitate communication across the world.\nSynonyms: help, assist" },
-                { front: "Fact", back: "<strong>Something that is true and can be proven.</strong>\n\nExample: It is a fact that the Earth orbits the Sun.\nSynonyms: truth, reality" },
-                { front: "Famine", back: "<strong>A time when there is very little food and many people starve.</strong>\n\nExample: The famine caused great suffering across the country.\nSynonyms: hunger, starvation" },
-                { front: "Fatal", back: "<strong>Causing death.</strong>\n\nExample: The snake's bite was fatal to the animal.\nSynonyms: deadly, lethal" },
-                { front: "Faux", back: "<strong>Made to look real but actually fake.</strong>\n\nExample: She wore a jacket made of faux fur.\nSynonyms: fake, imitation" },
-            ],
-            "11 plus Vocabulary 16.pdf": [
-                { front: "Feeble", back: "<strong>Very weak or lacking strength.</strong>\n\nExample: After being sick, he felt too feeble to play.\nSynonyms: weak, tired" },
-                { front: "Feign", back: "<strong>To pretend to feel or do something.</strong>\n\nExample: She tried to feign a smile even though she was sad.\nSynonyms: pretend, act" },
-                { front: "Fiasco", back: "<strong>A big failure or mess.</strong>\n\nExample: The picnic was a fiasco when it started to rain.\nSynonyms: disaster, mess" },
-                { front: "Figment", back: "<strong>Something made up in the mind.</strong>\n\nExample: The dragon in the story was just a figment of her imagination.\nSynonyms: fantasy, invention" },
-                { front: "Figurative", back: "<strong>Not literal; using words in a creative way.</strong>\n\nExample: \"I'm so hungry I could eat a horse\" is a figurative phrase.\nSynonyms: symbolic, creative" },
-                { front: "Flamboyant", back: "<strong>Very bright, fancy, or attention-grabbing.</strong>\n\nExample: He wore a flamboyant costume to the party.\nSynonyms: flashy, colourful" },
-                { front: "Flattering", back: "<strong>Making someone look or feel good.</strong>\n\nExample: That dress is very flattering on you.\nSynonyms: kind, praising" },
-                { front: "Flawed", back: "<strong>Having something wrong or not perfect.</strong>\n\nExample: The robot's design was flawed and needed fixing.\nSynonyms: broken, faulty" },
-                { front: "Flawless", back: "<strong>Perfect, with no mistakes or problems.</strong>\n\nExample: Her singing was flawless in the concert.\nSynonyms: perfect, excellent" },
-                { front: "Flee", back: "<strong>To run away from danger.</strong>\n\nExample: The animals had to flee the forest fire.\nSynonyms: run, escape" },
-                { front: "Fleet", back: "<strong>A group of ships or vehicles.</strong>\n\nExample: The navy sent out a fleet of ships.\nSynonyms: group, squadron" },
-                { front: "Flimsy", back: "<strong>Weak or easy to break.</strong>\n\nExample: The chair was too flimsy to sit on.\nSynonyms: weak, thin" },
-                { front: "Flippant", back: "<strong>Not showing respect; being silly when it's not right.</strong>\n\nExample: His flippant joke was not funny during the serious talk.\nSynonyms: rude, cheeky" },
-                { front: "Flora", back: "<strong>All the plants in a place.</strong>\n\nExample: The garden had many types of beautiful flora.\nSynonyms: plants, greenery" },
-            ],
-            "11 plus Vocabulary 17.pdf": [
-                { front: "Flourish", back: "<strong>To grow or develop in a strong, healthy way; or to do something with flair.</strong>\n\nExample: The artist's career began to flourish after the exhibition.\nSynonyms: Thrive, prosper" },
-                { front: "Foe", back: "<strong>An enemy or opponent.</strong>\n\nExample: The superhero finally defeated his long-time foe.\nSynonyms: Enemy, adversary" },
-                { front: "Forebear", back: "<strong>An ancestor or person from whom one is descended.</strong>\n\nExample: She discovered that her forebear fought in World War I.\nSynonyms: Ancestor, predecessor" },
-                { front: "Forlorn", back: "<strong>Sad and lonely, often due to abandonment.</strong>\n\nExample: The cat looked forlorn sitting in the rain.\nSynonyms: Miserable, desolate" },
-                { front: "Foundation", back: "<strong>The base or groundwork of something, especially a building or idea.</strong>\n\nExample: Education is the foundation of a successful future.\nSynonyms: Base, groundwork" },
-                { front: "Fragment", back: "<strong>A small part broken off from something whole.</strong>\n\nExample: He found a fragment of glass on the floor.\nSynonyms: Piece, shard" },
-                { front: "Frail", back: "<strong>Weak or delicate in health or structure.</strong>\n\nExample: The elderly woman was too frail to walk alone.\nSynonyms: Weak, feeble" },
-                { front: "Frantic", back: "<strong>Wild or desperate with fear, anxiety, or other emotions.</strong>\n\nExample: She made a frantic call to the police.\nSynonyms: Hysterical, panicked" },
-                { front: "Fraud", back: "<strong>A deliberate deception for unfair or unlawful gain.</strong>\n\nExample: The man was arrested for committing credit card fraud.\nSynonyms: Deception, scam" },
-                { front: "Fraudulent", back: "<strong>Dishonest or fake, especially intended to deceive.</strong>\n\nExample: They made a fraudulent insurance claim.\nSynonyms: Dishonest, deceitful" },
-                { front: "Frequent", back: "<strong>Happening often or at short intervals.</strong>\n\nExample: He makes frequent trips to the library.\nSynonyms: Regular, repeated" },
-                { front: "Frightful", back: "<strong>Very bad, shocking, or causing fear.</strong>\n\nExample: The weather was frightful during the storm.\nSynonyms: Terrible, alarming" },
-            ],
-            "11 plus Vocabulary 18.pdf": [
-                { front: "Front", back: "<strong>The forward-facing part or surface of something.</strong>\n\nExample: She stood at the front of the class to give her presentation.\nSynonyms: face, forepart" },
-                { front: "Frugal", back: "<strong>Careful in spending money or resources.</strong>\n\nExample: He lived a frugal life, rarely spending on luxuries.\nSynonyms: thrifty, economical" },
-                { front: "Fund", back: "<strong>A supply of money set aside for a specific purpose.</strong>\n\nExample: The school set up a fund to support art projects.\nSynonyms: reserve, pool" },
-                { front: "Fundamental", back: "<strong>Forming a necessary base or core; essential.</strong>\n\nExample: Reading is a fundamental skill for learning.\nSynonyms: basic, essential" },
-                { front: "Galvanise", back: "<strong>To shock or inspire someone into taking action.</strong>\n\nExample: The speech galvanised the crowd into protesting.\nSynonyms: stimulate, motivate" },
-                { front: "Garment", back: "<strong>A piece of clothing.</strong>\n\nExample: She folded each garment neatly before packing.\nSynonyms: clothing, apparel" },
-                { front: "Gauge", back: "<strong>To measure or estimate something.</strong>\n\nExample: The mechanic used a tool to gauge the tyre pressure.\nSynonyms: measure, assess" },
-                { front: "Gilt", back: "<strong>Covered with a thin layer of gold or gold-like substance.</strong>\n\nExample: The mirror had a gilt frame that sparkled in the light.\nSynonyms: gold-plated, gilded" },
-                { front: "Glib", back: "<strong>Speaking in a smooth, easy way that may lack sincerity.</strong>\n\nExample: His glib response made it hard to trust his promises.\nSynonyms: slick, superficial" },
-                { front: "Gloomy", back: "<strong>Dark, sad, or depressing.</strong>\n\nExample: The weather was gloomy all weekend.\nSynonyms: dreary, melancholy" },
-                { front: "Glutton", back: "<strong>A person who eats or consumes excessively.</strong>\n\nExample: He was a glutton for chocolate and couldn't stop eating it.\nSynonyms: overeater, gourmand" },
-                { front: "Grandeur", back: "<strong>Splendour and impressiveness, especially of appearance or style.</strong>\n\nExample: The palace was filled with elegance and grandeur.\nSynonyms: magnificence, majesty" },
-                { front: "Grate", back: "<strong>To rub something harshly or to cause irritation.</strong>\n\nExample: She used a metal tool to grate the cheese.\nSynonyms: shred, rasp; irritate, annoy" },
-            ],
-            "11 Plus Vocabulary 20_.pdf": [
-                { front: "Hierarchy", back: "<strong>An organisational system that ranks things in terms of their importance.</strong>\n\nExample: The school has a clear hierarchy, with the headteacher at the top.\nSynonyms: Ranking, Order" },
-                { front: "Hindsight", back: "<strong>Recognising and understanding something once it has already happened.</strong>\n\nExample: In hindsight, I should have studied more for the test.\nSynonyms: Reflection, Retrospect" },
-                { front: "Hoax", back: "<strong>Something that is fake and has been set up to deceive people.</strong>\n\nExample: The video turned out to be a hoax made to trick viewers.\nSynonyms: Scam, Deception" },
-                { front: "Holiday", back: "<strong>A break from the usual routine where you can do as you please.</strong>\n\nExample: We went to Spain for a relaxing holiday by the beach.\nSynonyms: Vacation, Break" },
-                { front: "Holler", back: "<strong>To shout or call out loudly.</strong>\n\nExample: He had to holler across the field to get their attention.\nSynonyms: Shout, Yell" },
-                { front: "Humane", back: "<strong>Having compassion and kindness towards others.</strong>\n\nExample: The shelter uses humane methods to care for the animals.\nSynonyms: Compassionate, Kind" },
-                { front: "Hypothetical", back: "<strong>What you think might happen but you don't yet have the evidence to support this.</strong>\n\nExample: The teacher gave a hypothetical scenario to spark debate.\nSynonyms: Theoretical, Assumed" },
-                { front: "Idle", back: "<strong>Being inactive or not being used.</strong>\n\nExample: The machine stood idle during the power cut.\nSynonyms: Inactive, Unused" },
-                { front: "Idol", back: "<strong>Someone or something that is admired and respected.</strong>\n\nExample: She looked up to her favourite singer as an idol.\nSynonyms: Hero, Role model" },
-                { front: "Idyllic", back: "<strong>Something that is beautiful and peaceful with little threat.</strong>\n\nExample: They spent the summer in an idyllic countryside cottage.\nSynonyms: Picturesque, Peaceful" },
-                { front: "Immaculate", back: "<strong>Something that is perfect and has no flaws.</strong>\n\nExample: His uniform was immaculate, not a wrinkle in sight.\nSynonyms: Spotless, Flawless" },
-                { front: "Immerse", back: "<strong>To be completely involved in something.</strong>\n\nExample: She loves to immerse herself in a good book.\nSynonyms: Absorb, Engage" },
-                { front: "Impassive", back: "<strong>Unresponsive and not showing any emotion towards what has happened.</strong>\n\nExample: He remained impassive despite the shocking news.\nSynonyms: Emotionless, Expressionless" },
-            ],
-            "11 Plus Vocabulary 21.pdf": [
-                { front: "Impede", back: "<strong>Preventing a task from progressing or being completed.</strong>\n\nExample: The heavy traffic will impede our journey to the airport.\nSynonyms: Obstruct, Hinder" },
-                { front: "Imperative", back: "<strong>Urgent and requires immediate attention.</strong>\n\nExample: It is imperative that we leave before the storm hits.\nSynonyms: Crucial, Urgent" },
-                { front: "Inadequate", back: "<strong>Not good enough or lacking in quality.</strong>\n\nExample: The shelter was inadequate to keep the animals warm.\nSynonyms: Insufficient, Deficient" },
-                { front: "Incision", back: "<strong>A cut in or through something caused by a sharp instrument.</strong>\n\nExample: The surgeon made a small incision below the rib cage.\nSynonyms: Cut, Slice" },
-                { front: "Incline", back: "<strong>A surface that is sloping upwards.</strong>\n\nExample: The car struggled to climb the steep incline.\nSynonyms: Slope, Gradient" },
-                { front: "Inconsequential", back: "<strong>Deemed low in importance and has little significance.</strong>\n\nExample: The mistake was minor and ultimately inconsequential.\nSynonyms: Trivial, Insignificant" },
-                { front: "Incumbent", back: "<strong>A person that holds a public office or an official post.</strong>\n\nExample: The incumbent mayor is running for re-election.\nSynonyms: Officeholder, Current holder" },
-                { front: "Identity", back: "<strong>What makes a person them, e.g. facts about them or personality traits.</strong>\n\nExample: Culture plays a big role in shaping someone's identity.\nSynonyms: Self, Character" },
-                { front: "Inequity", back: "<strong>Something that is unfair or when bias has been seen.</strong>\n\nExample: There is widespread inequity in access to education.\nSynonyms: Injustice, Unfairness" },
-                { front: "Inert", back: "<strong>Lacking strength and being unable to move.</strong>\n\nExample: The chemical is inert and will not react with water.\nSynonyms: Motionless, Inactive" },
-                { front: "Infantile", back: "<strong>Something that happens to or is suitable for a child.</strong>\n\nExample: His tantrum was very infantile for a grown adult.\nSynonyms: Childish, Immature" },
-                { front: "Inferior", back: "<strong>Has a lower status or is deemed less important than something else.</strong>\n\nExample: These shoes are of inferior quality compared to the branded ones.\nSynonyms: Worse, Lower" },
-            ],
-            "11 Plus Vocabulary 22.pdf": [
-                { front: "Inhale", back: "<strong>Breathing inwards, taking air into your lungs.</strong>\n\nExample: She had to inhale deeply before diving underwater.\nSynonyms: Breathe in, sniff" },
-                { front: "Innocuous", back: "<strong>Will cause no harm and is unlikely to upset anyone.</strong>\n\nExample: His comment seemed innocuous but made her smile.\nSynonyms: Harmless, safe" },
-                { front: "Insane", back: "<strong>A state of mind that is not determined to be sound.</strong>\n\nExample: The idea seemed insane, but it somehow worked.\nSynonyms: Crazy, mad" },
-                { front: "Insinuate", back: "<strong>To suggest something but not directly say it.</strong>\n\nExample: He tried to insinuate that she was to blame.\nSynonyms: Suggest, imply" },
-                { front: "Intangible", back: "<strong>Something that is abstract and cannot be specifically described.</strong>\n\nExample: Happiness is an intangible feeling.\nSynonyms: Abstract, invisible" },
-                { front: "Interfere", back: "<strong>To get involved in a situation you do not need to be part of.</strong>\n\nExample: Please don't interfere with their conversation.\nSynonyms: Meddle, intrude" },
-                { front: "Interrupt", back: "<strong>To cause a break and stop an activity.</strong>\n\nExample: Try not to interrupt people while they are speaking.\nSynonyms: Disrupt, disturb" },
-                { front: "Inundate", back: "<strong>To overwhelm and provide a large amount of things at the same time.</strong>\n\nExample: I was inundated with homework last weekend.\nSynonyms: Overwhelm, flood" },
-                { front: "Ironic", back: "<strong>Something having the opposite result of what was expected and causing humour.</strong>\n\nExample: It was ironic that the fire station caught fire.\nSynonyms: Unexpected, sarcastic" },
-                { front: "Isolation", back: "<strong>Cut off from others and completely alone.</strong>\n\nExample: During the storm, the village was in isolation.\nSynonyms: Solitude, seclusion" },
-                { front: "Jargon", back: "<strong>Terminology specific to a community that wouldn't make sense out of context.</strong>\n\nExample: The scientist used too much jargon for me to understand.\nSynonyms: Terminology, lingo" },
-                { front: "Jurisprudence", back: "<strong>Studying the law.</strong>\n\nExample: She studied jurisprudence at university to become a lawyer.\nSynonyms: Law, legal studies" },
-                { front: "Keel", back: "<strong>To collapse or overturn.</strong>\n\nExample: He felt dizzy and nearly keeled over.\nSynonyms: Collapse, topple" },
-            ],
-        };
+                    // Clear "Loading..." message
+                    setSelector.innerHTML = ''; 
 
-        const SET_NAMES = [
-            "All Sets",
-            // Initial 10
-            "11 Plus Vocabulary 3.pdf",
-            "11 plus vocabulary 4 .pdf",
-            "11 plus Vocabulary 6.pdf",
-            "11 plus Vocabulary 7 .pdf",
-            "11 Plus Vocabulary 8.pdf",
-            "11 plus Vocabulary 9.pdf",
-            "11 plus vocabulary 10.pdf",
-            "11 Plus Vocabulary 11.pdf",
-            "11 Plus Vocabulary 12.pdf",
-            "11 plus vocabulary 13.pdf",
-            // New 10 (from previous turn)
-            "11 Plus Vocabulary 23.pdf",
-            "11 Plus Vocabulary 24.pdf",
-            "11 Plus Vocabulary 25 .pdf",
-            "11 Plus Vocabulary 26.pdf",
-            "11 Plus Vocabulary 27.pdf",
-            "11 Plus Vocabulary 28.pdf",
-            "11 Plus Vocabulary 29.pdf",
-            "11 Plus Vocabulary 30.pdf",
-            "11 Plus Vocabulary 31 .pdf",
-            "11 Plus Vocabulary 32 (1).pdf",
-            // Latest 8 (from current turn)
-            "11 plus vocabulary 14.pdf",
-            "11 plus Vocabulary 15.pdf",
-            "11 plus Vocabulary 16.pdf",
-            "11 plus Vocabulary 17.pdf",
-            "11 plus Vocabulary 18.pdf",
-            "11 Plus Vocabulary 20_.pdf",
-            "11 Plus Vocabulary 21.pdf",
-            "11 Plus Vocabulary 22.pdf"
-        ];
+                    setNames = Object.keys(VOCAB_BY_SET);
+                    
+                    fullDeck = [];
+                    setNames.filter(name => name !== "All Sets").forEach(setName => {
+                        if (Array.isArray(VOCAB_BY_SET[setName])) {
+                            fullDeck = fullDeck.concat(VOCAB_BY_SET[setName]);
+                        } else {
+                            console.warn(`Data for set "${setName}" is not an array.`);
+                        }
+                    });
+                    
+                    VOCAB_BY_SET["All Sets"] = fullDeck; 
 
-        // --- DOM Elements ---
-        const statusMessageEl = document.getElementById('status-message');
-        const deckEl = document.getElementById('flashcard-deck');
-        const cardDisplayEl = document.getElementById('card-display');
-        const cardFrontContentEl = document.getElementById('card-front-content');
-        const cardBackContentEl = document.getElementById('card-back-content');
-        const cardIndexEl = document.getElementById('card-index');
-        const cardCountEl = document.getElementById('card-count');
-        const prevButton = document.getElementById('prev-button');
-        const nextButton = document.getElementById('next-button');
-        const setSelector = document.getElementById('set-selector');
+                    setNames.forEach(setName => {
+                        const option = document.createElement('option');
+                        option.value = setName;
+                        let count = Array.isArray(VOCAB_BY_SET[setName]) ? VOCAB_BY_SET[setName].length : 0;
+                        option.textContent = `${setName} (${count} cards)`;
+                        setSelector.appendChild(option);
+                    });
+                    
+                    setSelector.addEventListener('change', loadDeck);
+                    cardDisplayEl.addEventListener('click', flipCard);
+                    prevButton.addEventListener('click', () => navigateCard(-1));
+                    nextButton.addEventListener('click', () => navigateCard(1));
+                    
+                    loadDeck();
 
-
-        function setStatus(message, isError = false) {
-            statusMessageEl.textContent = message;
-            statusMessageEl.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-blue-100', 'text-blue-700');
-            statusMessageEl.classList.add(isError ? 'bg-red-100' : 'bg-blue-100', isError ? 'text-red-700' : 'text-blue-700');
-            statusMessageEl.classList.remove('hidden'); 
-            
-            if (!isError) {
-                setTimeout(() => statusMessageEl.classList.add('hidden'), 5000);
-            }
-        }
-
-        function updateUI() {
-            if (flashcardDeck.length === 0) {
-                deckEl.classList.add('hidden');
-                setStatus("No cards found for this set. Please select another.", true);
-                return;
+                } catch (error) {
+                    console.error("Initialization failed:", error);
+                    setSelector.innerHTML = '<option>Error loading app</option>';
+                    setStatus("An error occurred while starting the app. Check the console for details.", true);
+                }
             }
 
-            const card = flashcardDeck[currentCardIndex];
-            
-            // Update Card Content
-            cardFrontContentEl.innerHTML = card.front;
-            cardBackContentEl.innerHTML = formatBackContent(card.back);
-
-            // Update Deck Info
-            cardIndexEl.textContent = currentCardIndex + 1;
-            cardCountEl.textContent = flashcardDeck.length;
-
-            // Update Navigation Buttons
-            prevButton.disabled = currentCardIndex === 0;
-            nextButton.disabled = currentCardIndex === flashcardDeck.length - 1;
-
-            // Reset flip state
-            cardDisplayEl.classList.remove('flipped');
-            deckEl.classList.remove('hidden');
-            setStatus(`Loaded ${flashcardDeck.length} cards from "${setSelector.value}". Tap the card to flip.`);
-        }
-        
-        function formatBackContent(text) {
-            // Converts newlines into <br> tags for display formatting
-            return text.replace(/\n/g, '<br>');
-        }
-
-        function flipCard() {
-            cardDisplayEl.classList.toggle('flipped');
-        }
-
-        function navigateCard(direction) {
-            const newIndex = currentCardIndex + direction;
-            if (newIndex >= 0 && newIndex < flashcardDeck.length) {
-                currentCardIndex = newIndex;
-                updateUI();
-            }
-        }
-
-        function filterDeck() {
-            const selectedSet = setSelector.value;
-            currentCardIndex = 0;
-            
-            if (selectedSet === "All Sets") {
-                // Shuffle the full deck every time All Sets is loaded for better review
-                flashcardDeck = fullDeck.sort(() => Math.random() - 0.5); 
-            } else {
-                flashcardDeck = VOCAB_BY_SET[selectedSet] || [];
-            }
-            updateUI();
-        }
-
-        function initializeSets() {
-            // 1. Combine all individual sets into the "All Sets" deck
-            fullDeck = [];
-            SET_NAMES.filter(name => name !== "All Sets").forEach(setName => {
-                fullDeck = fullDeck.concat(VOCAB_BY_SET[setName] || []);
-            });
-            VOCAB_BY_SET["All Sets"] = fullDeck; // Assign the combined deck
-
-            // 2. Populate the selector dropdown
-            SET_NAMES.forEach(setName => {
-                const option = document.createElement('option');
-                option.value = setName;
-                let count = VOCAB_BY_SET[setName]?.length || 0;
+            function loadDeck() {
+                const selectedSet = setSelector.value;
+                currentCardIndex = 0;
                 
-                let label = setName;
-                if (setName === "All Sets") {
-                    label = `All ${SET_NAMES.length - 1} Sets`;
+                const deckData = VOCAB_BY_SET[selectedSet];
+                
+                if (!Array.isArray(deckData)) {
+                    console.error(`No data or invalid data for set: ${selectedSet}`);
+                    currentDeck = [];
+                    updateUI();
+                    return;
                 }
 
-                option.textContent = `${label} (${count} cards)`;
-                setSelector.appendChild(option);
-            });
-            
-            // 3. Load the initial deck (All Sets)
-            filterDeck();
-        }
+                if (selectedSet === "All Sets") {
+                    currentDeck = [...deckData].sort(() => Math.random() - 0.5); 
+                } else {
+                    currentDeck = deckData;
+                }
+                
+                updateUI();
+            }
 
-        // Initialize the app on load - IMMEDIATE LOADING
-        window.onload = function() {
-            initializeSets();
-        };
+            function updateUI() {
+                if (!currentDeck || currentDeck.length === 0) {
+                    deckEl.classList.add('hidden');
+                    setStatus("No cards found for this set. Please select another.", true);
+                    return;
+                }
+
+                deckEl.classList.remove('hidden');
+                statusMessageEl.classList.add('hidden');
+
+                const card = currentDeck[currentCardIndex];
+                
+                if (!card || typeof card.front === 'undefined' || typeof card.back === 'undefined') {
+                    console.error('Invalid card data at index:', currentCardIndex, card);
+                    // Skip this card or show an error
+                    if (currentDeck.length > 1) {
+                        navigateCard(1); // Try to move to the next card
+                    } else {
+                        setStatus("Error: Invalid card data found.", true);
+                    }
+                    return;
+                }
+
+                cardFrontContentEl.textContent = card.front;
+                cardBackContentEl.innerHTML = formatBackContent(card.back);
+
+                cardIndexEl.textContent = currentCardIndex + 1;
+                cardCountEl.textContent = currentDeck.length;
+
+                prevButton.disabled = currentCardIndex === 0;
+                nextButton.disabled = currentCardIndex === currentDeck.length - 1;
+
+                cardDisplayEl.classList.remove('flipped');
+            }
+            
+            function formatBackContent(text) {
+                if (typeof text !== 'string') return 'Invalid content';
+                return text.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+            }
+
+            function flipCard() {
+                cardDisplayEl.classList.toggle('flipped');
+            }
+
+            function navigateCard(direction) {
+                const newIndex = currentCardIndex + direction;
+                if (newIndex >= 0 && newIndex < currentDeck.length) {
+                    currentCardIndex = newIndex;
+                    updateUI();
+                }
+            }
+
+            function setStatus(message, isError = false) {
+                statusMessageEl.textContent = message;
+                statusMessageEl.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-blue-100', 'text-blue-700');
+                
+                if (isError) {
+                    statusMessageEl.classList.add('bg-red-100', 'text-red-700');
+                } else {
+                    statusMessageEl.classList.add('bg-blue-100', 'text-blue-700');
+                    setTimeout(() => statusMessageEl.classList.add('hidden'), 5000);
+                }
+            }
+
+            initializeApp();
+        });
     </script>
 </body>
 </html>
